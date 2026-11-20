@@ -7,7 +7,7 @@ int main()
 
     sf::RectangleShape block({40.f, 40.f});
     block.setPosition({180.f, 180.f});
-    block.setFillColor(sf::Color::Yellow); // Friend will change this!
+    block.setFillColor(sf::Color::Red); // Friend will change this!
 
     while (window.isOpen())
     {
