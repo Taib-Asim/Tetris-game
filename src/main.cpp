@@ -1,4 +1,9 @@
 #include <SFML/Graphics.hpp>
+#include<iostream>
+#include<fstream>
+#include<cstdlib>
+
+using namespace std;
 
 const int ROWS = 20;
 const int COLS = 10;
@@ -46,6 +51,78 @@ int fall_timer=0;
 
 int fall_speed=Start_Delay;
 int piece=2;
+int siz;
+
+//* task 2 by Suhaib
+bool readFile()
+{
+    ifstream fin("pieces.txt");
+    if(!fin)
+    {
+        cout<<"File Not opened";
+        return false;
+    }
+    fin>> siz ;
+    for(int k=0;k<siz;k++)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                fin >> pieces[k][i][j];
+            } 
+        }    
+    }
+    fin.close();
+    return true;
+}
+void BoardDraw(sf::RenderWindow & window)
+{
+    sf::RectangleShape block({CELL - 2, CELL - 2});
+    
+    for (int r = 0; r < ROWS; r++)
+    {
+        for (int c = 0; c < COLS; c++)
+        {
+            block.setFillColor(colors[board[r][c]]);
+            block.setPosition({Board_x + c * CELL + 1, Board_y + r * CELL + 1});
+            window.draw(block);
+        }
+    }
+    sf::RectangleShape border({ COLS * CELL,ROWS*CELL});
+    border.setPosition({ Board_x,Board_y});
+    border.setFillColor(sf::Color::Transparent);
+    border.setOutlineThickness(2.0f);
+    border.setOutlineColor(sf::Color::White);
+    window.draw(border);
+}
+
+void PieceDraw(sf::RenderWindow& window)
+{
+    sf::RectangleShape block({ CELL-2,CELL-2});
+    block.setFillColor(colors[piece+1]);
+    for (int r = 0; r < 4; r++)
+    {
+        for (int c = 0; c < 4; c++)
+        {
+            if(shape[r][c] == '#')
+            {
+                int board_r=piece_row+r;
+                int board_c=piece_col+c;
+                if(board_r>=0 && board_r<ROWS && board_c >=0 && board_c<COLS)
+                {
+                    block.setPosition({ Board_x + board_c *CELL +1 ,Board_y +board_r*CELL+1});
+                    window.draw(block);
+                }
+            }
+        }
+        
+    }
+    
+}
+//^ task 2 by Suhaib
+
+
 
 // task 1
 void handleInput(sf::RenderWindow & window)
@@ -115,6 +192,7 @@ void drawGame(sf::RenderWindow & window)
 	window.display();
 }
 // task 1
+
 
 int main()
 {
