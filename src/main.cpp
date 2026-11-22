@@ -53,11 +53,16 @@ int fall_speed=Start_Delay;
 int piece=2;
 int siz;
 
+bool game_status=true;
+
 //^ functions declaring here 
+void movePiece();
 /*void drop();*/        //To be added
-bool canPlace(char shape[][4], int row, int col);
-// void generate();  to be added
-void rotatePiece();    
+bool canPlace(char shape[][4],int row,int col);
+void generate();
+void lockPiece();
+void rotatePiece();
+void fallAuto();   
 
 //* task 2 by Suhaib
 bool readFile()
@@ -195,9 +200,45 @@ void movePiece()
         if (canPlace(shape, piece_row + 1, piece_col))
             piece_row++;
     }
+    else if(pressedKey==ROTATE)
+        rotatePiece();   
 }  //^ task 3
 
+//* task 4
 
+void lockPiece()
+{
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            if(shape[i][j] == '#')
+            {
+              board[piece_row+i][piece_col+j]=piece+1;
+            }
+        }   
+    }
+}
+void generate()
+{
+    piece=rand() % 7;
+    for(int r=0;r<4;r++)
+    {
+        for (int c = 0; c < 4; c++)
+        {
+            shape[r][c]=pieces[piece][r][c];
+        }
+    }
+    piece_row=Start_R;
+    piece_col=Start_C;
+    if(canPlace(shape,piece_row,piece_col)==false)
+    {
+        game_status=false;
+    }
+    fall_timer=0;
+}
+
+//^ task 4
 
 // task 1
 void handleInput(sf::RenderWindow & window)
@@ -263,6 +304,9 @@ void updateGame()
 void drawGame(sf::RenderWindow & window)
 {
     window.clear();
+    BoardDraw(window);
+    if(game_status==true)
+        PieceDraw(window);
 	window.display();
 }
 // task 1
@@ -276,6 +320,7 @@ int main()
     {
         return 1;
     }
+    generate();
 	while ( window.isOpen() )
 	{
 		handleInput(window);
