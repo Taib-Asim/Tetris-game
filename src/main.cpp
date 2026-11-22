@@ -56,8 +56,8 @@ int siz;
 //^ functions declaring here 
 /*void drop();*/        //To be added
 bool canPlace(char shape[][4], int row, int col);
-void generate();
-/*void rotatePiece(); */    //To be added
+// void generate();  to be added
+void rotatePiece();    
 
 //* task 2 by Suhaib
 bool readFile()
@@ -145,6 +145,39 @@ bool canPlace(char shape[][4], int row, int col)
     }
     return true;
 }
+
+void rotatePiece()
+{
+    char nShape[4][4];
+    for(int i=0;i<4;i++)
+    {
+        for(int j=0;j<4;j++)
+        {
+            nShape[j][i]=shape[i][j];
+        }
+    }
+    
+    for(int j=0;j<2;j++)
+    {
+        for(int i=0;i<4;i++)
+        {
+            char t=nShape[i][j];
+            nShape[i][j]=nShape[i][3-j];
+            nShape[i][3-j]=t;
+        }
+    }
+    if(canPlace(nShape,piece_row,piece_col))
+    {
+        for (int r = 0; r < 4; r++)
+        {
+            for (int c = 0; c < 4; c++)
+            {
+                shape[r][c]=nShape[r][c];
+            }
+        }
+    }
+}
+
 void movePiece()
 {
     if (pressedKey == LEFT)
@@ -224,13 +257,12 @@ void handleInput(sf::RenderWindow & window)
 }
 void updateGame()
 {
-   
+    movePiece();
     pressedKey=NONE;
 }
 void drawGame(sf::RenderWindow & window)
 {
     window.clear();
- 
 	window.display();
 }
 // task 1
@@ -240,8 +272,10 @@ int main()
 {
 	sf::RenderWindow window( sf::VideoMode( { Window_W, Window_H } ), "Tetris" );
     window.setFramerateLimit(60);
- 
-    
+    if(!readFile())
+    {
+        return 1;
+    }
 	while ( window.isOpen() )
 	{
 		handleInput(window);
