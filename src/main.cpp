@@ -53,6 +53,12 @@ int fall_speed=Start_Delay;
 int piece=2;
 int siz;
 
+//^ functions declaring here 
+/*void drop();*/        //To be added
+bool canPlace(char shape[][4], int row, int col);
+void generate();
+/*void rotatePiece(); */    //To be added
+
 //* task 2 by Suhaib
 bool readFile()
 {
@@ -121,6 +127,42 @@ void PieceDraw(sf::RenderWindow& window)
     
 }
 //^ task 2 by Suhaib
+bool canPlace(char shape[][4], int row, int col)
+{
+    int boardRow, boardCol;
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            if (shape[i][j] == '#')
+            {
+                boardRow = i + row;
+                boardCol = j + col;
+                if (boardRow >= ROWS || boardCol < 0 || boardCol >= COLS || board[boardRow][boardCol] != 0)
+                    return false;
+            }
+        }
+    }
+    return true;
+}
+void movePiece()
+{
+    if (pressedKey == LEFT)
+    {
+        if (canPlace(shape, piece_row, piece_col - 1))
+            piece_col--;
+    }
+    else if (pressedKey == RIGHT)
+    {
+        if (canPlace(shape, piece_row, piece_col + 1))
+            piece_col++;
+    }
+    else if (pressedKey == DOWN)
+    {
+        if (canPlace(shape, piece_row + 1, piece_col))
+            piece_row++;
+    }
+}  //^ task 3
 
 
 
