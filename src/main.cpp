@@ -49,6 +49,12 @@ int piece_row=Start_R;
 int piece_col=Start_C;
 int fall_timer=0;
 
+int total_line = 0;     //New Variable added task 6
+int next_piece = 0;
+int level = Start_Level;
+int lines_Cleared_pLevel = 0;
+int score = 0;
+
 int fall_speed=Start_Delay;
 int piece=2;
 int siz;
@@ -64,6 +70,7 @@ void lockPiece();
 void rotatePiece();
 void fallAuto(); 
 void clearLines();  
+void update_score_level(int& linesCleared);
 
 //* task 2 by Suhaib
 bool readFile()
@@ -301,8 +308,28 @@ void clearLines()
             r++;//Taake agli line jo neeche ayi us ko dobara check kr sake
         }
     }
+    update_score_level(linesClear);
 }
 //^task 5
+
+//task 6
+void update_score_level(int& linesCleared)
+{
+    score += Line_points[linesCleared];
+
+    if (linesCleared > 0)
+    {
+        lines_Cleared_pLevel += linesCleared;
+        total_line += linesCleared;
+        level = total_line / Lines_per_level;
+        if (lines_Cleared_pLevel >= Lines_per_level)
+        {
+            lines_Cleared_pLevel -= Lines_per_level;
+            if (fall_speed > Min_Delay)
+                fall_speed -= Speed_change;
+        }
+    }
+}
 // task 1
 void handleInput(sf::RenderWindow & window)
 {
