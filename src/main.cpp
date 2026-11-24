@@ -62,7 +62,8 @@ bool canPlace(char shape[][4],int row,int col);
 void generate();
 void lockPiece();
 void rotatePiece();
-void fallAuto();   
+void fallAuto(); 
+void clearLines();  
 
 //* task 2 by Suhaib
 bool readFile()
@@ -236,6 +237,7 @@ void lockPiece()
             }
         }   
     }
+    clearLines();
 }
 void generate()
 {
@@ -267,6 +269,40 @@ void drop()
 }
 //^ task 4
 
+//task 5
+void clearLines()
+{
+    int linesClear=0;
+    for(int r=ROWS-1;r>=0;r--)
+    {
+        bool fullLine=true;
+        for(int c=0;c<COLS;c++)
+        {
+            if(board[r][c]==0)
+            {
+                fullLine=false;
+                break;
+            }
+        }
+        if(fullLine)
+        {
+            linesClear++;
+            for(int row=r;row>0;row--)
+            {
+                for(int col=0;col<COLS;col++)
+                {
+                    board[row][col]=board[row-1][col];
+                }
+            }
+            for(int col=0;col<COLS;col++)//Ye top row ke liye kyun ke us ke uper access karne se array out of bounds ho rhi hai
+            {
+                board[0][col]=0;
+            }
+            r++;//Taake agli line jo neeche ayi us ko dobara check kr sake
+        }
+    }
+}
+//^task 5
 // task 1
 void handleInput(sf::RenderWindow & window)
 {
