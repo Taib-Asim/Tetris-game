@@ -57,7 +57,7 @@ bool game_status=true;
 
 //^ functions declaring here 
 void movePiece();
-/*void drop();*/        //To be added
+void drop();      
 bool canPlace(char shape[][4],int row,int col);
 void generate();
 void lockPiece();
@@ -202,9 +202,27 @@ void movePiece()
     }
     else if(pressedKey==ROTATE)
         rotatePiece();   
+    else if(pressedKey==DROP)
+        drop();
 }  //^ task 3
 
 //* task 4
+
+void fallAuto()
+{
+    fall_timer++;
+    if(fall_timer>=fall_speed)
+    {
+        fall_timer=0;
+        if(canPlace(shape,piece_row+1,piece_col))
+            piece_row++;
+        else
+        {
+            lockPiece();
+            generate();
+        }
+    }
+}
 
 void lockPiece()
 {
@@ -238,6 +256,15 @@ void generate()
     fall_timer=0;
 }
 
+void drop()
+{
+    while(canPlace(shape,piece_row+1,piece_col))
+    {
+        piece_row++;
+    }
+    lockPiece();
+    generate();
+}
 //^ task 4
 
 // task 1
@@ -299,6 +326,7 @@ void handleInput(sf::RenderWindow & window)
 void updateGame()
 {
     movePiece();
+    fallAuto();
     pressedKey=NONE;
 }
 void drawGame(sf::RenderWindow & window)
