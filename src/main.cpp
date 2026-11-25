@@ -27,6 +27,7 @@ const int Line_points[5] = { 0,100,300,500,800 };
 //^ by sir method 
 const int NONE=0,ROTATE=1,DOWN=2,LEFT=3,RIGHT=4,DROP=5,ESC=6,ENTER=7;
 
+
 int pressedKey=0;
 
 int board[ROWS][COLS]={0};
@@ -248,7 +249,9 @@ void lockPiece()
 }
 void generate()
 {
-    piece=rand() % 7;
+    piece=next_piece;
+    next_piece=rand()%7;
+    
     for(int r=0;r<4;r++)
     {
         for (int c = 0; c < 4; c++)
@@ -330,6 +333,60 @@ void update_score_level(int& linesCleared)
         }
     }
 }
+void drawInformation(sf::RenderWindow & window, sf::Font & font)
+{
+    sf::Text scoreLabel(font, "SCORE", 20);
+    scoreLabel.setPosition({355.f, 40.f});
+    window.draw(scoreLabel);
+
+    sf::Text scoreVal(font, to_string(score), 26);
+    scoreVal.setFillColor(sf::Color::Yellow);
+    scoreVal.setPosition({355.f, 68.f});
+    window.draw(scoreVal);
+
+    sf::Text linesLabel(font, "LINES", 20);
+    linesLabel.setPosition({355.f, 130.f});
+    window.draw(linesLabel);
+
+    sf::Text linesVal(font, to_string(total_line), 26);
+    linesVal.setPosition({355.f, 158.f});
+    window.draw(linesVal);
+
+    sf::Text levelLabel(font, "LEVEL", 20);
+    levelLabel.setPosition({355.f, 220.f});
+    window.draw(levelLabel);
+
+    sf::Text levelVal(font, to_string(level), 26);
+    levelVal.setFillColor(sf::Color::Green);
+    levelVal.setPosition({355.f, 248.f});
+    window.draw(levelVal);
+
+    sf::Text nextLabel(font, "NEXT", 20);
+    nextLabel.setPosition({355.f, 320.f});
+    window.draw(nextLabel);
+
+    sf::RectangleShape box({4 * CELL + 10, 4 * CELL + 10});
+    box.setPosition({350.f, 355.f});
+    box.setFillColor(sf::Color(25, 25, 45));
+    box.setOutlineThickness(2.0f);
+    box.setOutlineColor(sf::Color::White);
+    window.draw(box);
+
+    sf::RectangleShape block({CELL - 2, CELL - 2});
+    block.setFillColor(colors[next_piece + 1]);
+    for (int r = 0; r < 4; r++)
+    {
+        for (int c = 0; c < 4; c++)
+        {
+            if (pieces[next_piece][r][c] == '#')
+            {
+                block.setPosition({355.f + c * CELL + 1, 360.f + r * CELL + 1});
+                window.draw(block);
+            }
+        }
+    }
+
+} //^ task 6 done
 // task 1
 void handleInput(sf::RenderWindow & window)
 {
@@ -392,13 +449,13 @@ void updateGame()
     fallAuto();
     pressedKey=NONE;
 }
-void drawGame(sf::RenderWindow & window)
+void drawGame(sf::RenderWindow & window,sf::Font & font)
 {
-    window.clear();
+    window.clear(sf::Color(15,15,30));
     BoardDraw(window);
-    if(game_status==true)
-        PieceDraw(window);
-	window.display();
+    drawInformation(window,font);     
+    PieceDraw(window);
+    window.display();
 }
 // task 1
 
@@ -407,8 +464,16 @@ int main()
 {
 	sf::RenderWindow window( sf::VideoMode( { Window_W, Window_H } ), "Tetris" );
     window.setFramerateLimit(60);
+    srand(time(0));
+    next_piece=rand()%7;
     if(!readFile())
     {
+        return 1;
+    }
+    sf::Font font;
+    if(!font.openFromFile("arial.ttf"))
+    {
+        cout<<"Font not opened"<<endl;
         return 1;
     }
     generate();
@@ -416,6 +481,6 @@ int main()
 	{
 		handleInput(window);
         updateGame();
-        drawGame(window);
+        drawGame(window,font);
 	}
 }
