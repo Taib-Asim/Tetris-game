@@ -26,7 +26,9 @@ const int Line_points[5] = { 0,100,300,500,800 };
 
 //^ by sir method 
 const int NONE=0,ROTATE=1,DOWN=2,LEFT=3,RIGHT=4,DROP=5,ESC=6,ENTER=7;
-
+const int Menu=0,Playing=1,game_over=2;
+int gamestate=Menu;
+int menuchoice=0;
 
 int pressedKey=0;
 
@@ -387,6 +389,26 @@ void drawInformation(sf::RenderWindow & window, sf::Font & font)
     }
 
 } //^ task 6 done
+
+//* task 7 Menu and game states
+void resetGame()
+{
+    for (int i = 0; i < ROWS; i++)
+    {
+        for (int j = 0; j < COLS; j++)
+        {
+            board[i][j]=0;
+        }
+    }
+    score=0;
+    total_line=0;
+    level=Start_Level;
+    fall_speed=Start_Delay;
+    lines_Cleared_pLevel=0;
+    next_piece=rand()%7;
+    generate();
+} //^ task 7
+
 // task 1
 void handleInput(sf::RenderWindow & window)
 {
@@ -443,10 +465,61 @@ void handleInput(sf::RenderWindow & window)
         }
     }
 }
-void updateGame()
+void updateGame(sf::RenderWindow & window)
 {
-    movePiece();
-    fallAuto();
+    switch(gamestate)
+    {
+        case Menu:
+            if(pressedKey==ROTATE)
+            {
+                menuchoice-=1;
+                if(menuchoice==-1)
+                    menuchoice=2;
+            }
+            else if(pressedKey==DOWN)
+            {
+                menuchoice+=1;
+                if(menuchoice==3)
+                    menuchoice=0;
+            }
+            else if(pressedKey==ENTER)
+            {
+                if(menuchoice==0)
+                {
+                    resetGame();
+                    gamestate=Playing;
+                }
+                else if(menuchoice==1)
+                {
+                    //TASK 8 TO BE DONE(LOAD)
+                }
+                else if(menuchoice==2)
+                {
+                    window.close();
+                }
+            }
+            break;
+        case Playing:
+            if(pressedKey==ESC)
+            {
+                //TASK 8 TO BE DONE(SAVE)
+                gamestate=Menu;
+            }
+            else
+            {
+                movePiece();
+                fallAuto();
+            }
+            break;
+        case game_over:
+            if(pressedKey==ENTER)
+            {
+                //TASK 8 TO BE DONE (REMOVE)
+                menuchoice=0;
+                gamestate=Menu;
+            }
+            break;
+    }
     pressedKey=NONE;
 }
 void drawGame(sf::RenderWindow & window,sf::Font & font)
@@ -480,7 +553,8 @@ int main()
 	while ( window.isOpen() )
 	{
 		handleInput(window);
-        updateGame();
+        updateGame(window);
         drawGame(window,font);
 	}
+    return 0;
 }
