@@ -263,10 +263,11 @@ void generate()
     }
     piece_row=Start_R;
     piece_col=Start_C;
-    if(canPlace(shape,piece_row,piece_col)==false)
+    if (canPlace(shape, piece_row, piece_col) == false)
     {
-        game_status=false;
+        gamestate = game_over;
     }
+
     fall_timer=0;
 }
 
@@ -522,14 +523,70 @@ void updateGame(sf::RenderWindow & window)
     }
     pressedKey=NONE;
 }
-void drawGame(sf::RenderWindow & window,sf::Font & font)
+
+void drawMenu(sf::RenderWindow& window, sf::Font& font)
 {
-    window.clear(sf::Color(15,15,30));
-    BoardDraw(window);
-    drawInformation(window,font);     
-    PieceDraw(window);
+    string options[3] = { "New Game", "Continue", "Exit" };
+
+    sf::Text title(font, "TETRIS", 48);
+    title.setFillColor(sf::Color::Cyan);
+    title.setPosition({ 175.f, 110.f });
+    window.draw(title);
+
+    for (int i = 0; i < 3; i++)
+    {
+        sf::Text item(font, options[i], 28);
+        item.setFillColor(i == menuchoice ? sf::Color::Yellow : sf::Color::White);
+        item.setPosition({ 185.f, 250.f + i * 55.f });
+        window.draw(item);
+    }
+    /*if (noSave == true) 
+    {
+        sf::Text msg(font, "No saved game", 22);
+        msg.setFillColor(sf::Color::Red);
+        msg.setPosition({ 180.f, 430.f });
+        window.draw(msg);
+    }*/
+}
+
+void drawGameOver(sf::RenderWindow& window, sf::Font& font)
+{
+    sf::Text over(font, "GAME OVER", 42);
+    over.setFillColor(sf::Color::Red);
+    over.setPosition({ 140.f, 190.f });
+    window.draw(over);
+
+    sf::Text finalScore(font, "Final Score: " + to_string(score), 26);
+    finalScore.setFillColor(sf::Color::White);
+    finalScore.setPosition({ 160.f, 265.f });
+    window.draw(finalScore);
+
+    sf::Text prompt(font, "Press Enter", 24);
+    prompt.setFillColor(sf::Color::Yellow);
+    prompt.setPosition({ 195.f, 330.f });
+    window.draw(prompt);
+}
+
+void drawGame(sf::RenderWindow& window, sf::Font& font)
+{
+    window.clear(sf::Color(15, 15, 30));
+    switch (gamestate)
+    {
+    case Menu:
+        drawMenu(window, font);
+        break;
+    case Playing:
+        BoardDraw(window);
+        drawInformation(window, font);
+        PieceDraw(window);
+        break;
+    case game_over:
+        drawGameOver(window, font);
+        break;
+    }
     window.display();
 }
+
 // task 1
 
 
