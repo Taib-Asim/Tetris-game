@@ -30,6 +30,8 @@ const int Menu=0,Playing=1,game_over=2;
 int gamestate=Menu;
 int menuchoice=0;
 
+bool noSave=false;
+
 int pressedKey=0;
 
 int board[ROWS][COLS]={0};
@@ -410,6 +412,89 @@ void resetGame()
     generate();
 } //^ task 7
 
+//* task 8 saving game 
+void savegame()
+{
+	ofstream fout("savegame.txt");
+	if (!fout)
+		return;
+	fout << score << " " << total_line << " " << level << "\n";
+	fout << next_piece << "\n";
+	for (int r = 0; r < ROWS; r++)
+	{
+		for (int c = 0; c < COLS; c++)
+		{
+			fout << board[r][c];
+			if (c < COLS - 1)
+				fout << " ";
+		}
+		fout << "\n";
+	}
+	fout.close();
+}
+
+void loadgame()
+{
+	ifstream fin("savegame.txt");
+	if (!fin)
+	{
+        noSave=true;
+		return;
+	}
+    int t;
+    int count=0;
+    if(fin>>t)
+    {
+        score=t;
+        count++;
+    }
+    if(count==0)
+    {
+    
+        noSave=true;
+        fin.close();
+    }
+    else
+    {
+        noSave=false;
+        fin >> total_line >> level;
+        fin >> piece;
+        next_piece=rand()%7;
+        for (int r = 0; r < ROWS; r++)
+        {
+            for (int c = 0; c < COLS; c++)
+            {
+                fin >> board[r][c];
+            }
+        }
+        fin.close();
+        for (int i = 0; i < 4; i++)
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                shape[i][j]=pieces[piece][i][j];
+            }
+        }
+        if(level>=6)
+            fall_speed=Min_Delay;
+        else
+        {
+            fall_speed=Start_Delay - (level-1)*Min_Delay;
+        }
+        lines_Cleared_pLevel=total_line%Lines_per_level;
+        piece_row = Start_R;
+        piece_col = Start_C;
+        gamestate = Playing;
+    }
+}
+
+void removesave()
+{
+	ofstream fout("savegame.txt");
+	fout.close();
+}
+//^ task 8
+
 // task 1
 void handleInput(sf::RenderWindow & window)
 {
@@ -492,7 +577,7 @@ void updateGame(sf::RenderWindow & window)
                 }
                 else if(menuchoice==1)
                 {
-                    //TASK 8 TO BE DONE(LOAD)
+                    loadgame();
                 }
                 else if(menuchoice==2)
                 {
@@ -503,7 +588,7 @@ void updateGame(sf::RenderWindow & window)
         case Playing:
             if(pressedKey==ESC)
             {
-                //TASK 8 TO BE DONE(SAVE)
+                savegame();
                 gamestate=Menu;
             }
             else
@@ -515,7 +600,7 @@ void updateGame(sf::RenderWindow & window)
         case game_over:
             if(pressedKey==ENTER)
             {
-                //TASK 8 TO BE DONE (REMOVE)
+                removesave();
                 menuchoice=0;
                 gamestate=Menu;
             }
@@ -540,13 +625,13 @@ void drawMenu(sf::RenderWindow& window, sf::Font& font)
         item.setPosition({ 185.f, 250.f + i * 55.f });
         window.draw(item);
     }
-    /*if (noSave == true) 
+    if (noSave == true) 
     {
         sf::Text msg(font, "No saved game", 22);
         msg.setFillColor(sf::Color::Red);
         msg.setPosition({ 180.f, 430.f });
         window.draw(msg);
-    }*/
+    }
 }
 
 void drawGameOver(sf::RenderWindow& window, sf::Font& font)
