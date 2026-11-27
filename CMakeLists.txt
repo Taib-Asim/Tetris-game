@@ -15,11 +15,25 @@ FetchContent_MakeAvailable(SFML)
 
 add_executable(main src/main.cpp)
 target_compile_features(main PRIVATE cxx_std_17)
-target_link_libraries(main PRIVATE SFML::Graphics)
-
+target_link_libraries(main PRIVATE
+    SFML::Graphics
+    SFML::Window
+    SFML::System
+    SFML::Audio
+)
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT main)
 add_custom_command(TARGET main POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     "${CMAKE_SOURCE_DIR}/pieces.txt"
-    "$<TARGET_FILE_DIR:main>/pieces.txt"
-    )
+    "${CMAKE_SOURCE_DIR}/arial.ttf"
+    "${CMAKE_SOURCE_DIR}/selecting options.mpeg"
+    "${CMAKE_SOURCE_DIR}/blocks.mpeg"
+    "${CMAKE_SOURCE_DIR}/gameover.mpeg"
+    "${CMAKE_SOURCE_DIR}/theme.mpeg"
+    "${CMAKE_SOURCE_DIR}/line_clear.mpeg"
+    "$<TARGET_FILE_DIR:main>"
+)
+
+
+
+    

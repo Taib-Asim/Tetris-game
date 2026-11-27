@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include<iostream>
 #include<fstream>
 #include<cstdlib>
@@ -73,6 +74,19 @@ int level=Start_Level;
 //* Bonus variables
 bool holding=false;
 bool same_switch=false;
+
+//^ audio adding 
+sf::SoundBuffer selectBuffer;
+sf::SoundBuffer blockBuffer;
+sf::SoundBuffer overBuffer;
+
+sf::Sound selectSound(selectBuffer);
+sf::Sound blockSound(blockBuffer);
+sf::Sound overSound(overBuffer);
+
+sf::Music themeMusic;
+sf::SoundBuffer clearBuffer;
+sf::Sound clearSound(clearBuffer);
 
 
 //^ functions declaring here 
@@ -379,6 +393,7 @@ void lockPiece()
         }   
     }
     clearLines();
+    blockSound.play();
     same_switch=false;
 }
 void generate()
@@ -405,6 +420,7 @@ void generate()
     if(canPlace(shape,piece_row,piece_col)==false)
     {
         gamestate=game_over;
+        overSound.play();
     }
     fall_timer=0;
 }
@@ -450,6 +466,10 @@ void clearLines()
             }
             r++;//Taake agli line jo neeche ayi us ko dobara check kr sake
         }
+    }
+    if (linesClear > 0)
+    {
+        clearSound.play();
     }
     update_score_level(linesClear);
 }
@@ -782,22 +802,29 @@ void updateGame(sf::RenderWindow & window)
                 menuchoice-=1;
                 if(menuchoice==-1)
                     menuchoice=2;
+                selectSound.play();
             }
             else if(pressedKey==DOWN)
             {
                 menuchoice+=1;
                 if(menuchoice==3)
                     menuchoice=0;
+                selectSound.play();
             }
             else if(pressedKey==ENTER)
             {
                 if(menuchoice==0)
                 {
                     resetGame();
+                    themeMusic.stop();
                     gamestate=Playing;
+                    selectSound.play();
                 }
                 else if(menuchoice==1)
                 {
+                    selectSound.play();
+                    if (gamestate == Playing)
+                        themeMusic.stop();
                     loadgame();
                 }
                 else if(menuchoice==2)
@@ -810,6 +837,7 @@ void updateGame(sf::RenderWindow & window)
             if(pressedKey==ESC)
             {
                 savegame();
+                themeMusic.play();
                 gamestate=Menu;
             }
             else
@@ -824,6 +852,7 @@ void updateGame(sf::RenderWindow & window)
                 removesave();
                 menuchoice=0;
                 gamestate=Menu;
+                themeMusic.play();
             }
             break;
     }
@@ -912,6 +941,23 @@ int main()
         cout<<"Font not opened"<<endl;
         return 1;
     }
+    if (!selectBuffer.loadFromFile("selecting options.mpeg") ||
+        !blockBuffer.loadFromFile("blocks.mpeg") ||
+        !overBuffer.loadFromFile("gameover.mpeg") ||
+        !clearBuffer.loadFromFile("line_clear.mpeg"))
+    {
+        cout << "Sound not opened" << endl;
+        return 1;
+    }
+
+    if (!themeMusic.openFromFile("theme.mpeg"))
+    {
+        cout << "Theme music not opened" << endl;
+        return 1;
+    }
+    themeMusic.setLooping(true);
+    themeMusic.setVolume(40.f);
+    themeMusic.play();
 	while ( window.isOpen() )
 	{
 		handleInput(window);
