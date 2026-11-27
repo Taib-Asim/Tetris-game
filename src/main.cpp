@@ -6,14 +6,16 @@
 #include<ctime> 
 
 using namespace std;
+
+
 const int ROWS=20;
 const int COLS=10;
 const float CELL=30;
-const float Board_x=20;   //^ using float because SFML humse pixel coordinates float me expect krta setsize() setposition()
+const float Board_x=20;   //^ using float because SFML uses pixel coordinates in floating point number
 const float Board_y=20;
 
-const unsigned Window_W=520;  //? ye cols pehle confuse krdeta thora
-const unsigned Window_H=640;  //* just like above
+const unsigned Window_W=520;  
+const unsigned Window_H=640;  
 
 const int Start_R=0;
 const int Start_C=3;
@@ -25,11 +27,11 @@ const int Min_Delay=5;
 const int Lines_per_level=10;
 const int Line_points[5]={0,100,300,500,800};  
 
-//^ by sir method 
+//^ PDF method
 const int NONE=0,ROTATE=1,DOWN=2,LEFT=3,RIGHT=4,DROP=5,ESC=6,ENTER=7,HOLD=8;
 const int Menu=0,Playing=1,game_over=2;
-int gamestate=Menu;
-int menuchoice=0;
+int game_state=Menu;
+int menu_choice=0;
 
 bool noSave=false;
 
@@ -39,7 +41,7 @@ int board[ROWS][COLS]={0};
 
 char pieces[7][4][4];
 char shape[4][4] ;
-char shadow[4][4];
+
 
 sf::Color colors[8] = {
 sf::Color(25, 25, 45),   // 0: empty cell
@@ -61,7 +63,7 @@ int shadow_col=Start_C;
 int fall_timer=0;
 
 int fall_speed=Start_Delay;
-int piece=2;
+int piece;
 int score=0;
 int lines_Cleared_pLevel=0;
 
@@ -71,11 +73,11 @@ int next_piece=0;
 int held_piece=0;
 int level=Start_Level;
 
-//* Bonus variables
+//* Bonus Task variables
 bool holding=false;
 bool same_switch=false;
 
-//^ audio adding 
+//^ Audio Initializing
 sf::SoundBuffer selectBuffer;
 sf::SoundBuffer blockBuffer;
 sf::SoundBuffer overBuffer;
@@ -89,31 +91,238 @@ sf::SoundBuffer clearBuffer;
 sf::Sound clearSound(clearBuffer);
 
 
-//^ functions declaring here 
-void drop();
-void lockPiece();
-void clearLines();
-bool canPlace(char shape[][4],int row,int col);
-void generate();
+//^ functions declaring here
+bool readFile();
+void BoardDraw(sf::RenderWindow& window);
+void PieceDraw(sf::RenderWindow& window);
+void shadowDraw(sf::RenderWindow& window);
+void showPieceError(sf::RenderWindow& window);
+bool canPlace(char shape[][4], int row, int col);
 void rotatePiece();
+void movePiece();
 void fallAuto();
+void lockPiece();
+void generate();
+void drop();
+void clearLines();
 void update_score_level(int & linesCleared);
+void drawInformation(sf::RenderWindow& window, sf::Font& font);
+void resetGame();
+void savegame();
+void loadgame();
+void removesave();
 void holdPiece();
+void handleInput(sf::RenderWindow& window);
+void updateGame(sf::RenderWindow& window);
+void drawMenu(sf::RenderWindow& window, sf::Font& font);
+void drawGameOver(sf::RenderWindow& window, sf::Font& font);
+void drawGame(sf::RenderWindow& window, sf::Font& font);
 
-int siz;
+int n;
 
+// task 1
+void handleInput(sf::RenderWindow& window)
+{
+    while (const std::optional event = window.pollEvent())
+    {
+        if (event->is<sf::Event::Closed>())
+            window.close();
+        else if (const auto* key = event->getIf<sf::Event::KeyPressed>())
+        {
+            if (key->code == sf::Keyboard::Key::Left)
+            {
+                pressedKey = LEFT;
+            }
+            else if (key->code == sf::Keyboard::Key::Right)
+            {
+                pressedKey = RIGHT;
+            }
+            else if (key->code == sf::Keyboard::Key::Down)
+            {
+                pressedKey = DOWN;
+            }
+            else if (key->code == sf::Keyboard::Key::Space)
+            {
+                pressedKey = DROP;
+            }
+            else if (key->code == sf::Keyboard::Key::A)
+            {
+                pressedKey = LEFT;
+            }
+            else if (key->code == sf::Keyboard::Key::D)
+            {
+                pressedKey = RIGHT;
+            }
+            else if (key->code == sf::Keyboard::Key::S)
+            {
+                pressedKey = DOWN;
+            }
+            else if (key->code == sf::Keyboard::Key::Up)
+            {
+                pressedKey = ROTATE;
+            }
+            else if (key->code == sf::Keyboard::Key::W)
+            {
+                pressedKey = ROTATE;
+            }
+            else if (key->code == sf::Keyboard::Key::Escape)
+            {
+                pressedKey = ESC;
+            }
+            else if (key->code == sf::Keyboard::Key::Enter)
+            {
+                pressedKey = ENTER;
+            }
+            else if (key->code == sf::Keyboard::Key::C)
+            {
+                pressedKey = HOLD;
+            }
+        }
+    }
+}
+void updateGame(sf::RenderWindow& window)
+{
+    switch (game_state)
+    {
+    case Menu:
+        if (pressedKey == ROTATE)  //pressing up key to move up
+        {
+            menu_choice -= 1;
+            if (menu_choice == -1)
+                menu_choice = 2;
+            selectSound.play();
+        }
+        else if (pressedKey == DOWN)
+        {
+            menu_choice += 1;
+            if (menu_choice == 3)
+                menu_choice = 0;
+            selectSound.play();
+        }
+        else if (pressedKey == ENTER)
+        {
+            if (menu_choice == 0)  //selected new game
+            {
+                resetGame();
+                themeMusic.stop();
+                game_state = Playing;
+                selectSound.play();
+            }
+            else if (menu_choice == 1)  //selected continue
+            {
+                selectSound.play();
+                if (game_state == Playing)
+                    themeMusic.stop();
+                loadgame();
+            }
+            else if (menu_choice == 2)   //selecting exit
+            {
+                window.close();
+            }
+        }
+        break;
+    case Playing:
+        if (pressedKey == ESC)  //go to menu
+        {
+            savegame();
+            themeMusic.play();
+            game_state = Menu;
+        }
+        else
+        {
+            movePiece();
+            fallAuto();
+        }
+        break;
+    case game_over:
+        if (pressedKey == ENTER)  //move to menu
+        {
+            removesave();
+            menu_choice = 0;
+            game_state = Menu;
+            themeMusic.play();
+        }
+        break;
+    }
+    pressedKey = NONE;
+}
 
-//* task 2 by anas
+void drawMenu(sf::RenderWindow& window, sf::Font& font)
+{
+    string options[3] = { "New Game", "Continue", "Exit" };
+
+    sf::Text title(font, "TETRIS", 48);
+    title.setFillColor(sf::Color::Cyan);
+    title.setPosition({ 175.f, 110.f });
+    window.draw(title);
+
+    for (int i = 0; i < 3; i++)
+    {
+        sf::Text item(font, options[i], 28);
+        item.setFillColor(i == menu_choice ? sf::Color::Yellow : sf::Color::White);
+        item.setPosition({ 185.f, 250.f + i * 55.f });
+        window.draw(item);
+    }
+    if (noSave == true)
+    {
+        sf::Text msg(font, "No saved game", 22);
+        msg.setFillColor(sf::Color::Red);
+        msg.setPosition({ 180.f, 430.f });
+        window.draw(msg);
+    }
+}
+
+void drawGameOver(sf::RenderWindow& window, sf::Font& font)
+{
+    sf::Text over(font, "GAME OVER", 42);
+    over.setFillColor(sf::Color::Red);
+    over.setPosition({ 140.f, 190.f });
+    window.draw(over);
+
+    sf::Text finalScore(font, "Final Score: " + to_string(score), 26);
+    finalScore.setFillColor(sf::Color::White);
+    finalScore.setPosition({ 160.f, 265.f });
+    window.draw(finalScore);
+
+    sf::Text prompt(font, "Press Enter", 24);
+    prompt.setFillColor(sf::Color::Yellow);
+    prompt.setPosition({ 195.f, 330.f });
+    window.draw(prompt);
+}
+
+void drawGame(sf::RenderWindow& window, sf::Font& font)
+{
+    window.clear(sf::Color(15, 15, 30));
+    switch (game_state)
+    {
+    case Menu:
+        drawMenu(window, font);
+        break;
+    case Playing:
+        BoardDraw(window);
+        drawInformation(window, font);
+        shadowDraw(window);
+        PieceDraw(window);
+        break;
+    case game_over:
+        drawGameOver(window, font);
+        break;
+    }
+    window.display();
+}
+// task 1
+
+//* task 2 
 bool readFile()
 {
     ifstream fin("pieces.txt");
-    if(!fin)
+    if(!fin)  //Checking
     {
         cout<<"File Not opened";
         return false;
     }
-    fin>> siz ;
-    for(int k=0;k<siz;k++)
+    fin>> n ; //size
+    for(int k=0;k<n;k++)
     {
         for (int i = 0; i < 4; i++)
         {
@@ -174,22 +383,22 @@ void shadowDraw(sf::RenderWindow& window)
 {
     shadow_col = piece_col;
     shadow_row = piece_row;
-    while (canPlace(shape, shadow_row + 1, shadow_col))
+    while (canPlace(shape, shadow_row + 1, shadow_col)) 
     {
-        shadow_row++;
+        shadow_row++; //bringing shadow to minimum possible height
     }
 
     sf::Color col = colors[piece + 1];
-    col.a = 170; // outline alpha
+    col.a = 170; 
 
     sf::Color fillCol = colors[piece + 1];
-    fillCol.a = 45; // faint transparent tint inside the shadow
+    fillCol.a = 45; 
 
-    float x0 = 1.0f;            // inside left edge of the cell
-    float y0 = 1.0f;            // inside top edge of the cell
-    float side = CELL - 2.0f;   // 28px inner box
-    float thick = 2.5f;         // outline thickness
-    float dash = 10.0f;         // dash length
+    float x0 = 1.0f;            
+    float y0 = 1.0f;            
+    float side = CELL - 2.0f;   
+    float thick = 2.5f;         
+    float dash = 10.0f;         
 
     sf::RectangleShape fillBox({side, side});
     fillBox.setFillColor(fillCol);
@@ -211,30 +420,25 @@ void shadowDraw(sf::RenderWindow& window)
                 {
                     float px = Board_x + board_c * CELL + x0;
                     float py = Board_y + board_r * CELL + y0;
-
-                    // Faint transparent fill
+                    
                     fillBox.setPosition({px, py});
                     window.draw(fillBox);
-
-                    // Top edge (2 dashes)
+                    
                     dashH.setPosition({px, py});
                     window.draw(dashH);
                     dashH.setPosition({px + side - dash, py});
                     window.draw(dashH);
-
-                    // Bottom edge (2 dashes)
+                   
                     dashH.setPosition({px, py + side - thick});
                     window.draw(dashH);
                     dashH.setPosition({px + side - dash, py + side - thick});
                     window.draw(dashH);
 
-                    // Left edge (2 dashes)
                     dashV.setPosition({px, py});
                     window.draw(dashV);
                     dashV.setPosition({px, py + side - dash});
                     window.draw(dashV);
 
-                    // Right edge (2 dashes)
                     dashV.setPosition({px + side - thick, py});
                     window.draw(dashV);
                     dashV.setPosition({px + side - thick, py + side - dash});
@@ -244,7 +448,7 @@ void shadowDraw(sf::RenderWindow& window)
         }
     }
 }
-void showPieceError(sf::RenderWindow & window)
+void showPieceError(sf::RenderWindow & window) //To show error screen
 {
     sf::Font font;
     if (!font.openFromFile("arial.ttf") && !font.openFromFile("C:/Windows/Fonts/arial.ttf"))
@@ -281,10 +485,10 @@ void showPieceError(sf::RenderWindow & window)
         window.display();
     }
 }
-//^ task 2 by Anas
-//* task 3 by taib
+//^ task 2 
+//* task 3 
 
-bool canPlace(char shape[][4],int row,int col)
+bool canPlace(char shape[][4],int row,int col) 
 {
     int boardRow,boardCol;
     for (int i = 0; i < 4; i++)
@@ -302,10 +506,10 @@ bool canPlace(char shape[][4],int row,int col)
     }
     return true;
 }
-void rotatePiece()
+void rotatePiece()  //Clockwise rotate
 {
     char nShape[4][4];
-    for(int i=0;i<4;i++)
+    for(int i=0;i<4;i++)  //Storing in temp then rotating
     {
         for(int j=0;j<4;j++)
         {
@@ -364,7 +568,7 @@ void movePiece()
 }  //^ task 3
 
 //* task 4
-void fallAuto()
+void fallAuto() //Decreases piece height by comparing with fall speed
 {
     fall_timer++;
     if(fall_timer>=fall_speed)
@@ -382,7 +586,7 @@ void fallAuto()
 
 void lockPiece()
 {
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++) //Storing in board 
     {
         for (int j = 0; j < 4; j++)
         {
@@ -398,12 +602,12 @@ void lockPiece()
 }
 void generate()
 {
-    if(pressedKey!=HOLD)
+    if(pressedKey!=HOLD) //only creating new piece when c is not pressed
     {
         piece=next_piece;
         next_piece=rand()%7;
     }
-    else if(holding==false)
+    else if(holding==false) //if c is pressed and nothing is in hold then create new piece
     {
         piece=next_piece;
         next_piece=rand()%7;
@@ -419,10 +623,10 @@ void generate()
     piece_col=Start_C;
     if(canPlace(shape,piece_row,piece_col)==false)
     {
-        gamestate=game_over;
+        game_state=game_over;
         overSound.play();
     }
-    fall_timer=0;
+    fall_timer=0; //resetting fall timer
 }
 void drop()
 {
@@ -450,7 +654,7 @@ void clearLines()
                 break;
             }
         }
-        if(fullLine)
+        if(fullLine)  //shift board rows down when line is cleared
         {
             linesClear++;
             for(int row=r;row>0;row--)
@@ -460,11 +664,11 @@ void clearLines()
                     board[row][col]=board[row-1][col];
                 }
             }
-            for(int col=0;col<COLS;col++)//Ye top row ke liye kyun ke us ke uper access karne se array out of bounds ho rhi hai
-            {
+            for(int col=0;col<COLS;col++)  //for top row because above this array is out of bounds 
+            {  
                 board[0][col]=0;
             }
-            r++;//Taake agli line jo neeche ayi us ko dobara check kr sake
+            r++;//for rechecking
         }
     }
     if (linesClear > 0)
@@ -480,15 +684,15 @@ void update_score_level(int & linesCleared)
 {
     score+=Line_points[linesCleared];
 
-    if(linesCleared>0)
+    if(linesCleared>0)  
     {
         lines_Cleared_pLevel+=linesCleared;
         total_line+=linesCleared;
         level=Start_Level + (total_line/Lines_per_level);
-        if(lines_Cleared_pLevel>=Lines_per_level)
+        if(lines_Cleared_pLevel>=Lines_per_level)  //changing fall speed per level
         {
             lines_Cleared_pLevel-=Lines_per_level;
-            if(fall_speed>Min_Delay)
+            if(fall_speed>Min_Delay)  //check for minimum fall delay
                 fall_speed-=Speed_change;
         }
     }
@@ -605,7 +809,7 @@ void drawInformation(sf::RenderWindow & window, sf::Font & font)
 //* task 7 Menu and game states
 void resetGame()
 {
-    for (int i = 0; i < ROWS; i++)
+    for (int i = 0; i < ROWS; i++)  //Resetting board and all variables
     {
         for (int j = 0; j < COLS; j++)
         {
@@ -627,7 +831,7 @@ void resetGame()
 //* task 8 saving game 
 void savegame()
 {
-	ofstream fout("savegame.txt");
+	ofstream fout("savegame.txt"); //Writting data in txt file according to pdf
 	if (!fout)
 		return;
 	fout << score << " " << total_line << " " << level << "\n";
@@ -636,7 +840,7 @@ void savegame()
 	{
 		for (int c = 0; c < COLS; c++)
 		{
-			fout << board[r][c];
+			fout << board[r][c]; 
 			if (c < COLS - 1)
 				fout << " ";
 		}
@@ -647,7 +851,7 @@ void savegame()
 
 void loadgame()
 {
-	ifstream fin("savegame.txt");
+	ifstream fin("savegame.txt");  
 	if (!fin)
 	{
         noSave=true;
@@ -655,12 +859,12 @@ void loadgame()
 	}
     int t;
     int count=0;
-    if(fin>>t)
+    if(fin>>t)  //Checking whether first character is being read or not
     {
         score=t;
         count++;
     }
-    if(count==0)
+    if(count==0)  //meaning first character was not present
     {
     
         noSave=true;
@@ -698,7 +902,7 @@ void loadgame()
         same_switch=false;
         piece_row = Start_R;
         piece_col = Start_C;
-        gamestate = Playing;
+        game_state = Playing;
     }
 }
 
@@ -713,15 +917,15 @@ void removesave()
 
 void holdPiece()
 {
-    if(same_switch==false)
+    if(same_switch==false)  //running only if same piece is not switched again before lock piece
     {
-        if(holding==false)
+        if(holding==false)  //for first time
         {
             held_piece=piece;
             generate();
             holding=true;
         }
-        else
+        else  //for other than first time, replace current piece and held piece
         {
             int t=piece;
             piece=held_piece;
@@ -731,198 +935,6 @@ void holdPiece()
     }
     same_switch=true;
 }
-
-// task 1
-void handleInput(sf::RenderWindow & window)
-{
-    while ( const std::optional event = window.pollEvent() )
-    {
-        if ( event->is<sf::Event::Closed>() )
-            window.close();
-        else if(const auto* key= event ->getIf<sf::Event::KeyPressed>())
-        {
-            if(key->code== sf::Keyboard::Key::Left)
-            {
-                pressedKey=LEFT;
-            }
-            else if(key->code== sf::Keyboard::Key::Right)
-            {
-                pressedKey=RIGHT;
-            }
-            else if(key->code== sf::Keyboard::Key::Down)
-            {
-                pressedKey=DOWN;
-            }
-            else if(key->code== sf::Keyboard::Key::Space)
-            {
-                pressedKey=DROP;
-            }
-            else if(key->code== sf::Keyboard::Key::A)
-            {
-                pressedKey=LEFT;
-            }
-            else if(key->code== sf::Keyboard::Key::D)
-            {
-                pressedKey=RIGHT;
-            }
-            else if(key->code== sf::Keyboard::Key::S)
-            {
-                pressedKey=DOWN;
-            }            
-            else if(key->code== sf::Keyboard::Key::Up)
-            {
-                pressedKey=ROTATE;
-            }
-            else if(key->code== sf::Keyboard::Key::W)
-            {
-                pressedKey=ROTATE;
-            }
-            else if(key->code== sf::Keyboard::Key::Escape)
-            {
-                pressedKey=ESC;
-            }
-            else if(key->code== sf::Keyboard::Key::Enter)
-            {
-                pressedKey=ENTER;
-            }
-            else if(key->code== sf::Keyboard::Key::C)
-            {
-                pressedKey=HOLD;
-            }
-        }
-    }
-}
-void updateGame(sf::RenderWindow & window)
-{
-    switch(gamestate)
-    {
-        case Menu:
-            if(pressedKey==ROTATE)
-            {
-                menuchoice-=1;
-                if(menuchoice==-1)
-                    menuchoice=2;
-                selectSound.play();
-            }
-            else if(pressedKey==DOWN)
-            {
-                menuchoice+=1;
-                if(menuchoice==3)
-                    menuchoice=0;
-                selectSound.play();
-            }
-            else if(pressedKey==ENTER)
-            {
-                if(menuchoice==0)
-                {
-                    resetGame();
-                    themeMusic.stop();
-                    gamestate=Playing;
-                    selectSound.play();
-                }
-                else if(menuchoice==1)
-                {
-                    selectSound.play();
-                    if (gamestate == Playing)
-                        themeMusic.stop();
-                    loadgame();
-                }
-                else if(menuchoice==2)
-                {
-                    window.close();
-                }
-            }
-            break;
-        case Playing:
-            if(pressedKey==ESC)
-            {
-                savegame();
-                themeMusic.play();
-                gamestate=Menu;
-            }
-            else
-            {
-                movePiece();
-                fallAuto();
-            }
-            break;
-        case game_over:
-            if(pressedKey==ENTER)
-            {
-                removesave();
-                menuchoice=0;
-                gamestate=Menu;
-                themeMusic.play();
-            }
-            break;
-    }
-    pressedKey=NONE;
-}
-
-void drawMenu(sf::RenderWindow & window, sf::Font & font)
-{
-    string options[3] = {"New Game", "Continue", "Exit"};
-
-    sf::Text title(font, "TETRIS", 48);
-    title.setFillColor(sf::Color::Cyan);
-    title.setPosition({175.f, 110.f});
-    window.draw(title);
-
-    for (int i = 0; i < 3; i++)
-    {
-        sf::Text item(font, options[i], 28);
-        item.setFillColor(i == menuchoice ? sf::Color::Yellow : sf::Color::White);
-        item.setPosition({185.f, 250.f + i * 55.f});
-        window.draw(item);
-    }
-    if (noSave == true)
-    {
-        sf::Text msg(font, "No saved game", 22);
-        msg.setFillColor(sf::Color::Red);
-        msg.setPosition({180.f, 430.f});
-        window.draw(msg);
-    }
-}
-
-void drawGameOver(sf::RenderWindow & window, sf::Font & font)
-{
-    sf::Text over(font, "GAME OVER", 42);
-    over.setFillColor(sf::Color::Red);
-    over.setPosition({140.f, 190.f});
-    window.draw(over);
-
-    sf::Text finalScore(font, "Final Score: " + to_string(score), 26);
-    finalScore.setFillColor(sf::Color::White);
-    finalScore.setPosition({160.f, 265.f});
-    window.draw(finalScore);
-
-    sf::Text prompt(font, "Press Enter", 24);
-    prompt.setFillColor(sf::Color::Yellow);
-    prompt.setPosition({195.f, 330.f});
-    window.draw(prompt);
-}
-
-void drawGame(sf::RenderWindow & window,sf::Font & font)
-{
-    window.clear(sf::Color(15,15,30));
-    switch (gamestate)
-    {
-    case Menu:
-        drawMenu(window,font);
-        break;
-    case Playing:
-        BoardDraw(window);
-        drawInformation(window,font);
-        shadowDraw(window);
-        PieceDraw(window);
-        break;
-    case game_over:
-        drawGameOver(window,font);
-        break;
-    }
-    window.display();
-}
-// task 1
 
 int main()
 {
